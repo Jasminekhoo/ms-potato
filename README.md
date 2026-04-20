@@ -1,3 +1,6 @@
+# ms-potato
+UMHackathon 2026
+
 # AI Rent Advisor
 
 Frontend scaffold for Member 2 is ready under `frontend_flutter`.
