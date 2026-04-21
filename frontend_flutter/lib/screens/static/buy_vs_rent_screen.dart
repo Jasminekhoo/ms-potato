@@ -8,7 +8,7 @@ class BuyVsRentScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      title: 'Buy vs Rent (Mocked WOW Screen)',
+      title: 'Buy vs Rent',
       child: ListView(
         children: [
           Container(
