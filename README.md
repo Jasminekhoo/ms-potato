@@ -6,7 +6,7 @@ UMHackathon 2026
 
 Frontend scaffold for Member 2 is ready under `frontend_flutter`.
 
-## What is implemented (Member 2 deliverables)
+## What is implemented
 
 - Input form screen
   - `property name`, `location`, `asking rent`, `monthly income`
