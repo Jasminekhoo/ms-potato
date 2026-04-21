@@ -101,10 +101,33 @@ Response:
 
 ## Run
 
+Run the app from the `frontend_flutter` folder:
+
+```powershell
+cd "C:\Users\user\OneDrive\Desktop\ms-potato_umh\frontend_flutter"
+flutter pub get
+flutter run -d windows
+```
+
+If you want to open it in Chrome instead, use:
+
+```powershell
+cd "C:\Users\user\OneDrive\Desktop\ms-potato_umh\frontend_flutter"
+flutter pub get
+flutter run -d chrome
+```
+
+If `chrome` is not available, check your devices with:
+
+```powershell
+flutter devices
+```
+
+If you are running the project for the first time on Windows, make sure Developer Mode is enabled in Windows settings so Flutter can create desktop symlinks.
+
 1. Install Flutter SDK
-2. In `frontend_flutter`, run:
-   - `flutter pub get`
-   - `flutter run -d chrome`
+2. Open the project in VS Code or Terminal
+3. Run the commands above from `frontend_flutter`
 
 ## Notes
 
