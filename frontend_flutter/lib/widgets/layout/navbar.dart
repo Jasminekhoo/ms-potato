@@ -10,6 +10,17 @@ class TopNavBar extends StatelessWidget {
 
     return Row(
       children: [
+        // Menu icon to open Drawer
+        Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu),
+            tooltip: 'Open navigation menu',
+            onPressed: () {
+              Scaffold.of(context).openDrawer();
+            },
+          ),
+        ),
+        const SizedBox(width: 8),
         const Text(
           'AI Rent Advisor',
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
@@ -23,10 +34,7 @@ class TopNavBar extends StatelessWidget {
         _NavItem(
             label: 'Compare', path: '/compare', active: location == '/compare'),
         const SizedBox(width: 10),
-        _NavItem(
-            label: 'Buy vs Rent',
-            path: '/buy-vs-rent',
-            active: location == '/buy-vs-rent'),
+        _NavItem(label: 'About', path: '/about', active: location == '/about'),
       ],
     );
   }

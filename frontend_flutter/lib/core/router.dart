@@ -6,7 +6,7 @@ import '../screens/auth/login_screen.dart';
 import '../screens/auth/signup_screen.dart';
 import '../screens/compare/compare_screen.dart';
 import '../screens/home/home_screen.dart';
-import '../screens/static/buy_vs_rent_screen.dart';
+import '../screens/static/about_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -18,8 +18,6 @@ final appRouter = GoRouter(
     GoRoute(path: '/result', builder: (context, state) => const ResultScreen()),
     GoRoute(
         path: '/compare', builder: (context, state) => const CompareScreen()),
-    GoRoute(
-        path: '/buy-vs-rent',
-        builder: (context, state) => const BuyVsRentScreen()),
+    GoRoute(path: '/about', builder: (context, state) => const AboutScreen()),
   ],
 );

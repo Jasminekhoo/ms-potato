@@ -84,12 +84,12 @@ class _TipPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return const Card(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
+          children: [
             Text('Quick Tips',
                 style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18)),
             SizedBox(height: 12),

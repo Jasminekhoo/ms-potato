@@ -435,7 +435,7 @@ class _CompareScreenState extends State<CompareScreen> {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      title: 'Comparison',
+      title: 'Comparisons',
       child: ListView(
         children: [
           Card(
