@@ -17,11 +17,13 @@ class SignupScreen extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: SignupForm(
-                onSubmit: (name, email, password) async {
+                onSubmit: (name, email, password, role) async {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content:
-                            Text('Signup flow is scaffolded for integration.')),
+                    SnackBar(
+                      content: Text(
+                        'Signing up as ${role == UserRole.tenant ? 'Tenant' : 'Owner'}',
+                      ),
+                    ),
                   );
                 },
               ),

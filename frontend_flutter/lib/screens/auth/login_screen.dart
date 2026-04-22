@@ -20,8 +20,9 @@ class LoginScreen extends StatelessWidget {
                 onSubmit: (email, password) async {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                        content:
-                            Text('Auth wiring ready for backend integration.')),
+                      content:
+                          Text('Login flow is scaffolded for integration.'),
+                    ),
                   );
                 },
               ),

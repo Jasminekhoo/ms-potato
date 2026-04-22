@@ -20,21 +20,21 @@ class TopNavBar extends StatelessWidget {
             },
           ),
         ),
+        IconButton(
+          icon: const Icon(Icons.home_outlined),
+          tooltip: 'Exit to first page',
+          onPressed: () => context.go('/'),
+        ),
         const SizedBox(width: 8),
         const Text(
           'AI Rent Advisor',
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
         ),
         const Spacer(),
-        _NavItem(
-            label: 'Analyse',
-            path: '/input',
-            active: location == '/input' || location == '/result'),
+        _NavItem(label: 'Login', path: '/login', active: location == '/login'),
         const SizedBox(width: 10),
         _NavItem(
-            label: 'Compare', path: '/compare', active: location == '/compare'),
-        const SizedBox(width: 10),
-        _NavItem(label: 'About', path: '/about', active: location == '/about'),
+            label: 'Sign Up', path: '/signup', active: location == '/signup'),
       ],
     );
   }
