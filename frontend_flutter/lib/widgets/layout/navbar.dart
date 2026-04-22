@@ -7,6 +7,7 @@ class TopNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final location = GoRouterState.of(context).matchedLocation;
+    final isWide = MediaQuery.of(context).size.width >= 900;
 
     return Row(
       children: [
@@ -31,11 +32,83 @@ class TopNavBar extends StatelessWidget {
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
         ),
         const Spacer(),
+        if (isWide)
+          SizedBox(
+            width: 240,
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Search',
+                isDense: true,
+                prefixIcon: const Icon(Icons.search, size: 20),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+        if (isWide) const SizedBox(width: 10),
+        _NotificationButton(),
+        const SizedBox(width: 6),
+        _NavItem(
+            label: 'Profile', path: '/profile', active: location == '/profile'),
+        const SizedBox(width: 10),
         _NavItem(label: 'Login', path: '/login', active: location == '/login'),
         const SizedBox(width: 10),
         _NavItem(
             label: 'Sign Up', path: '/signup', active: location == '/signup'),
       ],
+    );
+  }
+}
+
+class _NotificationButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    const notifications = [
+      'Your rent analysis is ready.',
+      'New property match found nearby.',
+      'Profile update reminder.',
+    ];
+
+    return IconButton(
+      tooltip: 'Notifications',
+      icon: const Icon(Icons.notifications_none),
+      onPressed: () {
+        showModalBottomSheet<void>(
+          context: context,
+          showDragHandle: true,
+          builder: (context) {
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Notifications',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                    const SizedBox(height: 10),
+                    ...notifications.map(
+                      (item) => ListTile(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.circle, size: 10),
+                        title: Text(item),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

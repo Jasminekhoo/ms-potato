@@ -91,7 +91,8 @@ class _SideNavDrawer extends StatelessWidget {
         children: [
           DrawerHeader(
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              color:
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
             ),
             child: const Text(
               'AI Rent Advisor',
@@ -115,6 +116,12 @@ class _SideNavDrawer extends StatelessWidget {
             path: '/about',
             active: location == '/about',
             icon: Icons.info_outline,
+          ),
+          _DrawerNavItem(
+            label: 'Profile',
+            path: '/profile',
+            active: location == '/profile',
+            icon: Icons.person_outline,
           ),
         ],
       ),
