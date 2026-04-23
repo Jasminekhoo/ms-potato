@@ -57,7 +57,7 @@ class ProfileScreen extends StatelessWidget {
           final email = (data['email'] as String?)?.trim().isNotEmpty == true
               ? data['email'] as String
               : (user.email ?? '-');
-          final role = (data['role'] as String?) ?? 'Not selected';
+          final role = _formatRole(data['role'] as String?);
           final memberSince = _formatTimestamp(data['memberSince']);
           final phoneNumber = (data['phoneNumber'] as String?) ?? '-';
           final state = (data['state'] as String?) ?? '-';
@@ -240,6 +240,17 @@ class ProfileScreen extends StatelessWidget {
     return months[month - 1];
   }
 
+  static String _formatRole(String? role) {
+    final value = role?.trim().toLowerCase();
+    if (value == 'landlord' || value == 'owner') {
+      return 'Landlord';
+    }
+    if (value == 'tenant') {
+      return 'Tenant';
+    }
+    return 'Not selected';
+  }
+
   static List<Widget> _buildRentalHistory(List<dynamic> items) {
     final widgets = <Widget>[];
     for (var i = 0; i < items.length; i++) {
@@ -404,7 +415,9 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
     );
 
     final roleFromDb = (data['role'] as String?)?.trim().toLowerCase();
-    _selectedRole = (roleFromDb == 'owner') ? 'owner' : 'tenant';
+    _selectedRole = (roleFromDb == 'landlord' || roleFromDb == 'owner')
+        ? 'landlord'
+        : 'tenant';
 
     _rentalHistoryCtrl = TextEditingController(
       text: _serializeRentalHistory(
@@ -480,7 +493,8 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
                   decoration: const InputDecoration(labelText: 'Role'),
                   items: const [
                     DropdownMenuItem(value: 'tenant', child: Text('Tenant')),
-                    DropdownMenuItem(value: 'owner', child: Text('Owner')),
+                    DropdownMenuItem(
+                        value: 'landlord', child: Text('Landlord')),
                   ],
                   onChanged: _isSaving
                       ? null

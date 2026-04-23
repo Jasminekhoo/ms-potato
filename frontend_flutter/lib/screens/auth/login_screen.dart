@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 
@@ -21,10 +22,19 @@ class LoginScreen extends StatelessWidget {
               child: LoginForm(
                 onSubmit: (email, password) async {
                   try {
-                    await FirebaseAuth.instance.signInWithEmailAndPassword(
+                    final credential =
+                        await FirebaseAuth.instance.signInWithEmailAndPassword(
                       email: email,
                       password: password,
                     );
+
+                    final userDoc = await FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(credential.user!.uid)
+                        .get();
+                    final role =
+                        (userDoc.data()?['role'] as String?)?.toLowerCase() ??
+                            'tenant';
 
                     if (!context.mounted) {
                       return;
@@ -33,7 +43,9 @@ class LoginScreen extends StatelessWidget {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Login successful.')),
                     );
-                    context.go('/profile');
+                    context.go(role == 'owner' || role == 'landlord'
+                        ? '/landlord-home'
+                        : '/tenant-home');
                   } on FirebaseAuthException catch (e) {
                     if (!context.mounted) {
                       return;

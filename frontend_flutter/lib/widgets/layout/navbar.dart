@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 
 class TopNavBar extends StatelessWidget {
@@ -8,6 +10,7 @@ class TopNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final location = GoRouterState.of(context).matchedLocation;
     final isWide = MediaQuery.of(context).size.width >= 900;
+    final user = FirebaseAuth.instance.currentUser;
 
     return Row(
       children: [
@@ -51,16 +54,69 @@ class TopNavBar extends StatelessWidget {
         if (isWide) const SizedBox(width: 10),
         _NotificationButton(),
         const SizedBox(width: 6),
-        _NavItem(
-            label: 'Profile', path: '/profile', active: location == '/profile'),
-        const SizedBox(width: 10),
-        _NavItem(label: 'Login', path: '/login', active: location == '/login'),
-        const SizedBox(width: 10),
-        _NavItem(
-            label: 'Sign Up', path: '/signup', active: location == '/signup'),
+        if (user == null) ...[
+          _NavItem(
+              label: 'Login', path: '/login', active: location == '/login'),
+          const SizedBox(width: 10),
+          _NavItem(
+              label: 'Sign Up', path: '/signup', active: location == '/signup'),
+        ] else
+          FutureBuilder<String>(
+            future: _resolveRole(user.uid),
+            builder: (context, snapshot) {
+              final role = snapshot.data ?? 'tenant';
+              final isLandlord = role == 'landlord';
+              return Wrap(
+                spacing: 10,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  _NavItem(
+                    label: 'Profile',
+                    path: '/profile',
+                    active: location == '/profile',
+                  ),
+                  _NavItem(
+                    label: 'Payments',
+                    path: '/payments',
+                    active: location == '/payments',
+                  ),
+                  _NavItem(
+                    label: isLandlord ? 'Landlord Home' : 'Tenant Home',
+                    path: isLandlord ? '/landlord-home' : '/tenant-home',
+                    active: location == '/landlord-home' ||
+                        location == '/tenant-home',
+                  ),
+                  TextButton.icon(
+                    onPressed: () async {
+                      await FirebaseAuth.instance.signOut();
+                      if (context.mounted) {
+                        context.go('/login');
+                      }
+                    },
+                    icon: const Icon(Icons.logout_outlined, size: 18),
+                    label: const Text('Logout'),
+                  ),
+                ],
+              );
+            },
+          ),
       ],
     );
   }
+}
+
+Future<String> _resolveRole(String uid) async {
+  try {
+    final snapshot =
+        await FirebaseFirestore.instance.collection('users').doc(uid).get();
+    final role = (snapshot.data()?['role'] as String?)?.toLowerCase();
+    if (role == 'landlord' || role == 'owner') {
+      return 'landlord';
+    }
+  } catch (_) {
+    // Default below.
+  }
+  return 'tenant';
 }
 
 class _NotificationButton extends StatelessWidget {

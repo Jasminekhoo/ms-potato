@@ -49,10 +49,12 @@ class SignupScreen extends StatelessWidget {
                     }
 
                     final message = profileWriteWarning ??
-                        'Account created as ${role == UserRole.tenant ? 'Tenant' : 'Owner'}.';
+                        'Account created as ${role == UserRole.tenant ? 'Tenant' : 'Landlord'}.';
                     ScaffoldMessenger.of(context)
                         .showSnackBar(SnackBar(content: Text(message)));
-                    context.go('/profile');
+                    context.go(role == UserRole.tenant
+                        ? '/tenant-home'
+                        : '/landlord-home');
                   } on FirebaseAuthException catch (e) {
                     if (!context.mounted) {
                       return;

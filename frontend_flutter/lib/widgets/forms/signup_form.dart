@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../common/primary_button.dart';
 
-enum UserRole { tenant, owner }
+enum UserRole { tenant, landlord }
 
 class SignupForm extends StatefulWidget {
   const SignupForm({super.key, required this.onSubmit});
@@ -132,7 +132,7 @@ class _SignupFormState extends State<SignupForm> {
               ),
               const Text('Tenant'),
               Radio<UserRole>(
-                value: UserRole.owner,
+                value: UserRole.landlord,
                 groupValue: _selectedRole,
                 onChanged: _isSubmitting
                     ? null
@@ -142,7 +142,7 @@ class _SignupFormState extends State<SignupForm> {
                         });
                       },
               ),
-              const Text('Owner'),
+              const Text('Landlord'),
             ],
           ),
           const SizedBox(height: 16),
