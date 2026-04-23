@@ -7,27 +7,108 @@ class TopNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final location = GoRouterState.of(context).matchedLocation;
+    final isWide = MediaQuery.of(context).size.width >= 900;
 
     return Row(
       children: [
+        // Menu icon to open Drawer
+        Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu),
+            tooltip: 'Open navigation menu',
+            onPressed: () {
+              Scaffold.of(context).openDrawer();
+            },
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.home_outlined),
+          tooltip: 'Exit to first page',
+          onPressed: () => context.go('/'),
+        ),
+        const SizedBox(width: 8),
         const Text(
           'AI Rent Advisor',
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
         ),
         const Spacer(),
+        if (isWide)
+          SizedBox(
+            width: 240,
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Search',
+                isDense: true,
+                prefixIcon: const Icon(Icons.search, size: 20),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+        if (isWide) const SizedBox(width: 10),
+        _NotificationButton(),
+        const SizedBox(width: 6),
         _NavItem(
-            label: 'Analyse',
-            path: '/input',
-            active: location == '/input' || location == '/result'),
+            label: 'Profile', path: '/profile', active: location == '/profile'),
+        const SizedBox(width: 10),
+        _NavItem(label: 'Login', path: '/login', active: location == '/login'),
         const SizedBox(width: 10),
         _NavItem(
-            label: 'Compare', path: '/compare', active: location == '/compare'),
-        const SizedBox(width: 10),
-        _NavItem(
-            label: 'Buy vs Rent',
-            path: '/buy-vs-rent',
-            active: location == '/buy-vs-rent'),
+            label: 'Sign Up', path: '/signup', active: location == '/signup'),
       ],
+    );
+  }
+}
+
+class _NotificationButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    const notifications = [
+      'Your rent analysis is ready.',
+      'New property match found nearby.',
+      'Profile update reminder.',
+    ];
+
+    return IconButton(
+      tooltip: 'Notifications',
+      icon: const Icon(Icons.notifications_none),
+      onPressed: () {
+        showModalBottomSheet<void>(
+          context: context,
+          showDragHandle: true,
+          builder: (context) {
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Notifications',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                    const SizedBox(height: 10),
+                    ...notifications.map(
+                      (item) => ListTile(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.circle, size: 10),
+                        title: Text(item),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

@@ -17,19 +17,18 @@ Frontend scaffold for Member 2 is ready under `frontend_flutter`.
   - Negotiation coach card
 - Loading state
   - Animated skeleton placeholders while waiting
-- Static WOW pages
-  - Buy vs Rent mocked page
-  - Comparison mocked page (3 curated cards)
+- Comparison page
+  - Side-by-side comparison cards for rent-focused decision making
 
 ## Frontend Routes
 
 - `/` Home
 - `/input` Analysis input
 - `/result` Analysis result
-- `/compare` Mock comparison page
-- `/buy-vs-rent` Mock buy vs rent page
+- `/compare` Comparison page
 - `/login` Login scaffold
 - `/signup` Signup scaffold
+- `/about` About page
 
 ## API Contract expected from backend
 

@@ -41,12 +41,24 @@ class HomeScreen extends StatelessWidget {
                   style: TextStyle(color: Colors.white, fontSize: 16),
                 ),
                 const SizedBox(height: 20),
-                SizedBox(
-                  width: 230,
-                  child: PrimaryButton(
-                    label: 'Start Analysis',
-                    onPressed: () => context.go('/input'),
-                  ),
+                Row(
+                  children: [
+                    SizedBox(
+                      width: 170,
+                      child: PrimaryButton(
+                        label: 'Start Analysis',
+                        onPressed: () => context.go('/input'),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    SizedBox(
+                      width: 110,
+                      child: OutlinedButton(
+                        onPressed: () => context.go('/login'),
+                        child: const Text('Login'),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
