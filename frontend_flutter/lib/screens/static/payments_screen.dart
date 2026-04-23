@@ -283,8 +283,20 @@ class _TenantPayRentCardState extends State<_TenantPayRentCard> {
         return;
       }
 
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      final assignedLandlordId =
+          (userDoc.data()?['assignedLandlordId'] as String?)?.trim();
+      final landlordId =
+          (assignedLandlordId != null && assignedLandlordId.isNotEmpty)
+              ? assignedLandlordId
+              : null;
+
       await FirebaseFirestore.instance.collection('rent_payments').add({
         'tenantId': user.uid,
+        'landlordId': landlordId,
         'amount': amount,
         'method': _method,
         'reference': _referenceController.text.trim(),
@@ -505,6 +517,9 @@ class _LandlordCollectionsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return const SizedBox.shrink();
+    }
 
     return Card(
       child: Padding(
@@ -512,6 +527,7 @@ class _LandlordCollectionsCard extends StatelessWidget {
         child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
           stream: FirebaseFirestore.instance
               .collection('rent_payments')
+              .where('landlordId', isEqualTo: user.uid)
               .snapshots(),
           builder: (context, paymentSnapshot) {
             if (paymentSnapshot.connectionState == ConnectionState.waiting) {
@@ -528,12 +544,10 @@ class _LandlordCollectionsCard extends StatelessWidget {
             final paymentDocs = paymentSnapshot.data?.docs ?? [];
 
             return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-              stream: user == null
-                  ? const Stream.empty()
-                  : FirebaseFirestore.instance
-                      .collection('tenant_ratings')
-                      .where('landlordId', isEqualTo: user.uid)
-                      .snapshots(),
+              stream: FirebaseFirestore.instance
+                  .collection('tenant_ratings')
+                  .where('landlordId', isEqualTo: user.uid)
+                  .snapshots(),
               builder: (context, ratingSnapshot) {
                 final ratingDocs = ratingSnapshot.data?.docs ?? [];
                 final now = DateTime.now();
@@ -613,7 +627,7 @@ class _LandlordCollectionsCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     const Text(
-                      'Live data from rent_payments and your tenant_ratings records.',
+                      'Live data for your assigned tenants only.',
                     ),
                   ],
                 );
@@ -632,12 +646,19 @@ class _LandlordTenantStatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return const SizedBox.shrink();
+    }
 
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-          stream: FirebaseFirestore.instance.collection('users').snapshots(),
+          stream: FirebaseFirestore.instance
+              .collection('users')
+              .where('role', isEqualTo: 'tenant')
+              .where('assignedLandlordId', isEqualTo: user.uid)
+              .snapshots(),
           builder: (context, userSnapshot) {
             if (userSnapshot.connectionState == ConnectionState.waiting) {
               return const Padding(
@@ -650,15 +671,12 @@ class _LandlordTenantStatusCard extends StatelessWidget {
               return const Text('Unable to load tenant users.');
             }
 
-            final tenantDocs = (userSnapshot.data?.docs ?? []).where((doc) {
-              final role =
-                  (doc.data()['role'] as String?)?.trim().toLowerCase() ?? '';
-              return role == 'tenant';
-            }).toList();
+            final tenantDocs = userSnapshot.data?.docs ?? [];
 
             return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
               stream: FirebaseFirestore.instance
                   .collection('rent_payments')
+                  .where('landlordId', isEqualTo: user.uid)
                   .snapshots(),
               builder: (context, paymentSnapshot) {
                 if (paymentSnapshot.connectionState ==
@@ -676,12 +694,10 @@ class _LandlordTenantStatusCard extends StatelessWidget {
                 final paymentDocs = paymentSnapshot.data?.docs ?? [];
 
                 return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                  stream: user == null
-                      ? const Stream.empty()
-                      : FirebaseFirestore.instance
-                          .collection('tenant_ratings')
-                          .where('landlordId', isEqualTo: user.uid)
-                          .snapshots(),
+                  stream: FirebaseFirestore.instance
+                      .collection('tenant_ratings')
+                      .where('landlordId', isEqualTo: user.uid)
+                      .snapshots(),
                   builder: (context, ratingSnapshot) {
                     final ratingDocs = ratingSnapshot.data?.docs ?? [];
 
@@ -856,8 +872,14 @@ class _LandlordRatingCardState extends State<_LandlordRatingCard> {
             const Text('Landlords can rate tenants after payment cycles.'),
             const SizedBox(height: 12),
             StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-              stream:
-                  FirebaseFirestore.instance.collection('users').snapshots(),
+              stream: FirebaseFirestore.instance
+                  .collection('users')
+                  .where('role', isEqualTo: 'tenant')
+                  .where(
+                    'assignedLandlordId',
+                    isEqualTo: FirebaseAuth.instance.currentUser?.uid,
+                  )
+                  .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Padding(
@@ -870,11 +892,7 @@ class _LandlordRatingCardState extends State<_LandlordRatingCard> {
                   return const Text('Unable to load tenant list.');
                 }
 
-                final options = (snapshot.data?.docs ?? []).where((doc) {
-                  final role =
-                      (doc.data()['role'] as String?)?.trim().toLowerCase();
-                  return role == 'tenant';
-                }).map((doc) {
+                final options = (snapshot.data?.docs ?? []).map((doc) {
                   final data = doc.data();
                   final name = (data['name'] as String?)?.trim();
                   final email = (data['email'] as String?)?.trim();
@@ -886,7 +904,7 @@ class _LandlordRatingCardState extends State<_LandlordRatingCard> {
 
                 if (options.isEmpty) {
                   return const Text(
-                    'No tenant accounts found yet. Create a tenant account first.',
+                    'No assigned tenants found yet.',
                   );
                 }
 

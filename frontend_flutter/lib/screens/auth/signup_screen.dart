@@ -37,6 +37,8 @@ class SignupScreen extends StatelessWidget {
                         'name': name,
                         'email': email,
                         'role': role.name,
+                        'assignedLandlordId':
+                            role == UserRole.tenant ? null : '',
                         'memberSince': FieldValue.serverTimestamp(),
                       });
                     } on FirebaseException catch (e) {

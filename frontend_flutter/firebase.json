@@ -1,1 +1,16 @@
-{"flutter":{"platforms":{"dart":{"lib/firebase_options.dart":{"projectId":"ms-potato","configurations":{"web":"1:495153818415:web:f21eaaac5c744a49d20fda","windows":"1:495153818415:web:8017c12c456a63ccd20fda"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "ms-potato",
+          "configurations": {
+            "web": "1:495153818415:web:f21eaaac5c744a49d20fda",
+            "windows": "1:495153818415:web:8017c12c456a63ccd20fda"
+          }
+        }
+      }
+    }
+  },
+  "firestore": { "rules": "firestore.rules" }
+}

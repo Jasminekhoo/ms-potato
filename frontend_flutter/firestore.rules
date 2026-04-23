@@ -1,0 +1,66 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function isLandlord() {
+      return signedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['landlord', 'owner'];
+    }
+
+    function isAssignedTenantForLandlord(tenantId, landlordId) {
+      return get(/databases/$(database)/documents/users/$(tenantId)).data.assignedLandlordId == landlordId;
+    }
+
+    match /users/{userId} {
+      allow create: if isOwner(userId);
+
+      allow read: if isOwner(userId) || (
+        isLandlord() &&
+        resource.data.role == 'tenant' &&
+        resource.data.assignedLandlordId == request.auth.uid
+      );
+
+      allow update: if isOwner(userId);
+      allow delete: if false;
+    }
+
+    match /rent_payments/{paymentId} {
+      allow create: if signedIn() &&
+        request.resource.data.tenantId == request.auth.uid &&
+        request.resource.data.amount is number &&
+        request.resource.data.amount > 0 &&
+        request.resource.data.status is string;
+
+      allow read: if signedIn() && (
+        resource.data.tenantId == request.auth.uid ||
+        resource.data.landlordId == request.auth.uid
+      );
+
+      allow update, delete: if false;
+    }
+
+    match /tenant_ratings/{ratingId} {
+      allow create: if isLandlord() &&
+        request.resource.data.landlordId == request.auth.uid &&
+        request.resource.data.tenantId is string &&
+        isAssignedTenantForLandlord(request.resource.data.tenantId, request.auth.uid) &&
+        request.resource.data.rating is number &&
+        request.resource.data.rating >= 1 &&
+        request.resource.data.rating <= 5;
+
+      allow read: if signedIn() && (
+        resource.data.landlordId == request.auth.uid ||
+        resource.data.tenantId == request.auth.uid
+      );
+
+      allow update, delete: if false;
+    }
+  }
+}
