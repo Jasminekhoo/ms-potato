@@ -12,7 +12,6 @@ class ApiService {
 
   Future<AnalysisResult> analyse(PropertyInput input) async {
     final uri = Uri.parse('${AppConfig.apiBaseUrl}/analyse');
-
     try {
       final response = await _client
           .post(
@@ -21,7 +20,6 @@ class ApiService {
             body: jsonEncode(input.toJson()),
           )
           .timeout(const Duration(seconds: 8));
-
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return AnalysisResult.fromJson(
             jsonDecode(response.body) as Map<String, dynamic>);

@@ -1,3 +1,4 @@
+import json
 import traceback
 from flask import Flask, request, jsonify
 from ai_engine import (
@@ -9,32 +10,86 @@ from ai_engine import (
 
 app = Flask(__name__)
 
-
-# ==============================
-# HEALTH CHECK
-# ==============================
 @app.route("/", methods=["GET"])
 def home():
     return jsonify({"message": "AI Rental Backend Running"})
 
-
-# ==============================
-# 1. RENTAL VERDICT
-# ==============================
-@app.route("/api/verdict", methods=["POST"])
-def rental_verdict():
+@app.route("/api/analyze", methods=["POST"])
+def analyze():
     try:
-        data = request.json
+        data = request.json or {}
 
-        property_data = data.get("property_data")
-        market_data = data.get("market_data")
-        risks = data.get("risks")
+        property_data = data.get("property_data", {})
+        market_data = data.get("market_data", {})
+        risks_input = data.get("risks_text", "")
 
-        result = get_rental_verdict(property_data, market_data, risks)
+        # =========================
+        # VALIDATION
+        # =========================
+        rent = property_data.get("askingRent")
+        income = property_data.get("monthlyIncome")
 
+        if rent is None or income is None:
+            return jsonify({
+                "success": False,
+                "error": "Missing askingRent or monthlyIncome"
+            }), 400
+
+        if income <= 0:
+            return jsonify({
+                "success": False,
+                "error": "monthlyIncome must be > 0"
+            }), 400
+
+        # =========================
+        # COMPUTE CORE METRICS
+        # =========================
+        rent_to_income = rent / income
+
+        computed = {
+            "rent_to_income": round(rent_to_income, 2),
+            "status":
+                "AFFORDABLE" if rent_to_income <= 0.3 else
+                "MODERATE" if rent_to_income <= 0.5 else
+                "UNAFFORDABLE"
+        }
+
+        # =========================
+        # AI CALLS (your existing engines)
+        # =========================
+        verdict = get_rental_verdict(property_data, market_data, {})
+        cost = get_true_cost(risks_input)
+        risk = analyze_risks(risks_input)
+
+        # =========================
+        # NEGOTIATION (OPTIONAL but recommended)
+        # =========================
+        negotiation = None
+        try:
+            price = rent
+            market_price = market_data.get("avgRent", rent)
+            risk_level = risk.get("overall_severity", "MEDIUM")
+
+            negotiation = get_negotiation_advice(
+                price,
+                market_price,
+                risk_level
+            )
+        except:
+            negotiation = None  # don't break system if this fails
+
+        # =========================
+        # FINAL RESPONSE
+        # =========================
         return jsonify({
             "success": True,
-            "data": result
+            "data": {
+                "verdict": verdict,
+                "true_cost": cost,
+                "risk": risk,
+                "negotiation": negotiation,
+                "computed": computed
+            }
         })
 
     except Exception as e:
@@ -42,79 +97,6 @@ def rental_verdict():
             "success": False,
             "error": str(e)
         }), 500
-
-
-# ==============================
-# 2. TRUE COST
-# ==============================
-@app.route("/api/true-cost", methods=["POST"])
-def true_cost():
-    try:
-        data = request.json
-        listing_text = data.get("listing_text")
-
-        result = get_true_cost(listing_text)
-
-        return jsonify({
-            "success": True,
-            "data": result
-        })
-
-    except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        }), 500
-
-
-# ==============================
-# 3. RISK RADAR
-# ==============================
-@app.route("/api/risk", methods=["POST"])
-def risk_analysis():
-    try:
-        data = request.json
-        text_data = data.get("text_data")
-
-        result = analyze_risks(text_data)
-
-        return jsonify({
-            "success": True,
-            "data": result
-        })
-
-    except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        }), 500
-
-
-# ==============================
-# 4. NEGOTIATION COACH
-# ==============================
-@app.route("/api/negotiation", methods=["POST"])
-def negotiation():
-    try:
-        data = request.json
-
-        price = data.get("price")
-        market_price = data.get("market_price")
-        risk = data.get("risk")
-
-        result = get_negotiation_advice(price, market_price, risk)
-
-        return jsonify({
-            "success": True,
-            "data": result
-        })
-
-    except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        }), 500
-
 
 # ==============================
 # RUN SERVER
