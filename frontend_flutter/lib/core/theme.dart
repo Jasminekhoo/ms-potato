@@ -12,7 +12,7 @@ ThemeData buildAppTheme() {
   return base.copyWith(
     scaffoldBackgroundColor: const Color(0xFFF3F6F8),
     appBarTheme: const AppBarTheme(centerTitle: false, elevation: 0),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: Colors.white,
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
