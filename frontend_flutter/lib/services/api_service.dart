@@ -30,6 +30,9 @@ class ApiService {
 
     return AnalysisResult(
       verdict: 'ACCEPTABLE',
+      label: 'CAUTION', // Added to match new UI logic
+      suggestion:
+          'Negotiate the parking fee to bring the true cost closer to your budget.', // Added
       explanation:
           'Asking rent is close to postcode median, but hidden move-in costs push first-year burden higher than expected.',
       listedRent: input.askingRent,

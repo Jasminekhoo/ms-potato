@@ -377,7 +377,7 @@ function calculateTenantTrustScore(tenantId) {
 
 function calculateAdaptiveDeposit(propertyId, tenantId, monthlyRent, trustScore) {
   const baseDeposit = monthlyRent * 2;
-  
+
   if (trustScore >= 0.8) {
     return {
       amount: Math.round(monthlyRent * 1.5),
@@ -402,19 +402,19 @@ function calculateAdaptiveDeposit(propertyId, tenantId, monthlyRent, trustScore)
 function extractComplaintsText(propertyId) {
   const complaints = getPropertyComplaints(propertyId);
   const reviews = getPropertyReviews(propertyId);
-  
+
   let text = 'Recent feedback:\n';
-  
+
   complaints.forEach(c => {
     text += `[COMPLAINT] ${c.complaint_text} (${c.source}, severity: ${c.severity})\n`;
   });
-  
+
   reviews.forEach(r => {
     if (r.rating <= 2) {
       text += `[NEGATIVE REVIEW] "${r.comment}" (${r.date})\n`;
     }
   });
-  
+
   return text || 'No complaints recorded.';
 }
 
@@ -423,10 +423,14 @@ function normalizeText(value) {
 }
 
 function parseMoney(value) {
-  if (typeof value === 'number') return value;
-  if (typeof value !== 'string') return NaN;
-  const cleaned = value.replace(/[^0-9.]/g, '');
+  if (value === null || value === undefined) return NaN;
+
+  const str = String(value);
+
+  const cleaned = str.replace(/[^0-9.]/g, '');
+
   if (!cleaned) return NaN;
+
   return Number(cleaned);
 }
 
@@ -468,10 +472,11 @@ app.get('/health', (req, res) => {
 // 1. RENTAL VERDICT
 // ============================================================
 app.post('/api/analyse', async (req, res) => {
+  console.log("🔥 /api/analyse HIT", req.body);
   try {
-    const { propertyName, location, area, askingRent, monthlyIncome } = req.body;
+    const { propertyName, location, askingRent, monthlyIncome } = req.body;
 
-    const property = findPropertyMatch({ propertyName, location, area });
+    const property = findPropertyMatch({ propertyName, location});
 
     if (!property) {
       return res.status(404).json({ error: 'Property not found' });
@@ -526,6 +531,10 @@ app.post('/api/analyse', async (req, res) => {
     let aiRiskData = null;
     let aiNegotiationData = null;
     try {
+      console.log("AI verdict OK");
+      console.log("AI cost OK");
+      console.log("AI risk OK");
+      console.log("AI negotiation OK");
       const [verdictResponse, trueCostResponse, riskResponse, negotiationResponse] = await Promise.all([
         axios.post(`${AI_API_URL}/api/verdict`, {
           property_data: propertyData,
@@ -793,7 +802,7 @@ app.post('/api/negotiation', async (req, res) => {
 
     const riskRadar = financialEngine.getRiskRadar(property);
     const marketDiff = property.monthly_rent - property.averageMarketRent;
-    
+
     // Call AI for negotiation advice
     let aiNegotiationData;
     try {
@@ -966,11 +975,11 @@ app.get('/api/properties', (req, res) => {
 app.get('/api/properties/:id', (req, res) => {
   const property = db.properties.find(p => p.id === req.params.id);
   if (!property) return res.status(404).json({ error: 'Not found' });
-  
+
   const landlord = db.users.find(u => u.id === property.landlordId);
   const reviews = getPropertyReviews(property.id);
   const complaints = getPropertyComplaints(property.id);
-  
+
   res.json({
     ...property,
     landlord,
@@ -982,7 +991,7 @@ app.get('/api/properties/:id', (req, res) => {
 app.get('/api/users/:id', (req, res) => {
   const user = db.users.find(u => u.id === req.params.id);
   if (!user) return res.status(404).json({ error: 'Not found' });
-  
+
   const trustScore = getTrustScore(req.params.id);
   res.json({ ...user, trustScore });
 });

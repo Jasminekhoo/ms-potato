@@ -24,7 +24,8 @@ class ResultScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<PropertyProvider>();
     final isLoading = provider.isLoading;
-    final result = provider.result;
+    // Note: ensure your provider uses the getter name 'result' or 'analysisResult'
+    final result = provider.result; 
 
     return AppScaffold(
       title: 'Analysis Result',
@@ -60,8 +61,9 @@ class _ResultContent extends StatelessWidget {
         .join('\n');
 
     return '''AI Rent Advisor Report
-Verdict: ${result.verdict}
+Verdict: ${result.verdict} (${result.label})
 Reason: ${result.explanation}
+Suggestion: ${result.suggestion}
 
 Listed Rent: ${Currency.rm(result.listedRent)}
 True First-Year Monthly Cost: ${Currency.rm(result.trueCostMonthly)}
@@ -83,7 +85,13 @@ $sources
 
   @override
   Widget build(BuildContext context) {
+    // Determine color based on the "label" field from your API
+    final bool isDangerous = result.label.toUpperCase() == 'DANGEROUS' || result.verdict.toUpperCase() == 'AVOID';
+    final themeColor = isDangerous ? const Color(0xFFB91C1C) : const Color(0xFF0F766E);
+    final bgColor = themeColor.withValues(alpha: 0.10);
+
     return ListView(
+      padding: const EdgeInsets.symmetric(vertical: 16),
       children: [
         Hero(
           tag: 'analysis-verdict-hero',
@@ -94,16 +102,15 @@ $sources
                 Expanded(
                   child: Container(
                     margin: const EdgeInsets.only(bottom: 12),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0F766E).withValues(alpha: 0.10),
+                      color: bgColor,
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
-                      'Verdict generated: ${result.verdict}',
-                      style: const TextStyle(
-                        color: Color(0xFF0F766E),
+                      'Verdict generated: ${result.verdict} • ${result.label}',
+                      style: TextStyle(
+                        color: themeColor,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -117,17 +124,15 @@ $sources
                     );
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Full analysis summary copied.'),
-                        ),
+                        const SnackBar(content: Text('Full analysis summary copied.')),
                       );
                     }
                   },
-                  icon: const Icon(Icons.ios_share, size: 16),
-                  label: const Text('Copy Summary'),
+                  icon: const Icon(Icons.copy, size: 16),
+                  label: const Text('Copy'),
                 ),
                 if (kIsWeb)
-                  TextButton.icon(
+                  IconButton(
                     onPressed: () async {
                       final ok = await _exportService.exportTextFile(
                         filename: 'ai_rent_advisor_report.txt',
@@ -135,17 +140,11 @@ $sources
                       );
                       if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            ok
-                                ? 'Downloaded ai_rent_advisor_report.txt'
-                                : 'Unable to download report file.',
-                          ),
-                        ),
+                        SnackBar(content: Text(ok ? 'Report downloaded' : 'Download failed')),
                       );
                     },
                     icon: const Icon(Icons.download, size: 16),
-                    label: const Text('Download TXT'),
+                    tooltip: 'Download TXT',
                   ),
               ],
             ),
@@ -156,8 +155,17 @@ $sources
           child: VerdictCard(
             verdict: result.verdict,
             explanation: result.explanation,
+            // If VerdictCard supports it, pass result.suggestion here
           ),
         ),
+        if (result.suggestion.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+            child: Text(
+              "Recommendation: ${result.suggestion}",
+              style: const TextStyle(fontStyle: FontStyle.italic, color: Colors.blueGrey),
+            ),
+          ),
         const SizedBox(height: 12),
         StaggeredReveal(
           index: 1,
@@ -199,19 +207,32 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('No result yet. Submit a property first.'),
-            const SizedBox(height: 12),
-            FilledButton(
-              onPressed: () => context.go('/input'),
-              child: const Text('Go to Input'),
-            ),
-          ],
+    return Center(
+      child: Card(
+        margin: const EdgeInsets.all(24),
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.analytics_outlined, size: 48, color: Colors.grey),
+              const SizedBox(height: 16),
+              const Text(
+                'No result yet. Submit a property first.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 24),
+              FilledButton(
+                onPressed: () => context.go('/input'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF0F766E),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
+                child: const Text('Go to Input'),
+              ),
+            ],
+          ),
         ),
       ),
     );

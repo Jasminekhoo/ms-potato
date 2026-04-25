@@ -7,7 +7,7 @@
 class FinancialRiskEngine {
     constructor(riskDataset) {
         this.riskDataset = riskDataset; // Mock community complaints
-        
+
         this.regionalSettings = {
             "Kuala Lumpur": { waterBase: 10, elecFactor: 0.15, baseGrowth: 0.03 },
             "Selangor": { waterBase: 6, elecFactor: 0.12, baseGrowth: 0.02 }
@@ -25,10 +25,11 @@ class FinancialRiskEngine {
         this.premiumZones = ["klcc", "bintang", "city centre", "trx", "mont kiara"];
         this.urbanHubs = ["petaling jaya", "subang jaya", "sunway", "damansara", "bangsar"];
     }
-
-    parseRent(rentString) {
-        if (!rentString) return 0;
-        return parseInt(rentString.replace(/[^0-9]/g, '')) || 0;
+5
+    parseRent(rentValue) {
+        const str = String(rentValue ?? '');
+        const cleaned = str.replace(/[^0-9]/g, '');
+        return Number(cleaned) || 0;
     }
 
     /**
@@ -46,9 +47,9 @@ class FinancialRiskEngine {
         const hasWifi = (row.additional_facilities || "").toLowerCase().includes("internet");
         const wifiCost = hasWifi ? 0 : 100;
         const estElec = Math.round(advertisedRent * settings.elecFactor);
-        
+
         const totalHiddenMonthly = estParking + furnishSurcharge + estElec + wifiCost + settings.waterBase;
-        
+
         // First-year monthly average (Rent + Hidden + 2.5 months deposit spread over 12 months)
         const depositImpact = (advertisedRent * 2.5) / 12;
         const firstYearMonthlyAvg = advertisedRent + totalHiddenMonthly + depositImpact;
@@ -68,7 +69,7 @@ class FinancialRiskEngine {
     checkAffordability(trueMonthlyAverage, monthlyIncome, location) {
         const ratio = trueMonthlyAverage / monthlyIncome;
         const loc = (location || "").toLowerCase();
-        
+
         let result = {
             ratio: (ratio * 100).toFixed(1) + "%",
             label: "SAFE",
@@ -83,7 +84,7 @@ class FinancialRiskEngine {
         } else if (ratio > 0.45) {
             result.label = "DANGEROUS";
             result.color = "red";
-            
+
             // Generate Alternative Suggestion
             const alternative = Object.keys(this.areaAlternatives).find(key => loc.includes(key));
             result.suggestion = `Highly expensive. Consider looking in ${this.areaAlternatives[alternative] || "more suburban areas"} for better value.`;
@@ -164,7 +165,7 @@ class FinancialRiskEngine {
 
     estimateParkingFee(location, region) {
         const loc = location.toLowerCase();
-        if (this.premiumZones.some(zone => loc.includes(zone))) return 300; 
+        if (this.premiumZones.some(zone => loc.includes(zone))) return 300;
         if (this.urbanHubs.some(hub => loc.includes(hub))) return 180;
         return 100;
     }

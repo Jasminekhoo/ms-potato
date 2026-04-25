@@ -72,6 +72,7 @@ class _PropertyFormState extends State<PropertyForm> {
           PrimaryButton(
             label: 'Analyse Rental',
             onPressed: () {
+              print("🚀 BUTTON CLICKED");
               if (!_formKey.currentState!.validate()) return;
 
               widget.onSubmit(

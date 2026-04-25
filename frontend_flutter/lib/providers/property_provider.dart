@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
-
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import '../models/analysis_result.dart';
 import '../models/property_input.dart';
 import '../services/api_service.dart';
@@ -14,17 +15,44 @@ class PropertyProvider extends ChangeNotifier {
   String? error;
 
   Future<void> analyse(PropertyInput input) async {
+    print("📡 analyse() STARTED");
+    
+    // 1. Update UI to "Loading" state
     isLoading = true;
     error = null;
-    notifyListeners();
+    result = null; 
+    notifyListeners(); 
 
     try {
-      result = await _api.analyse(input);
+      final response = await http.post(
+        Uri.parse("http://127.0.0.1:3001/api/analyse"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "propertyName": input.propertyName,
+          "location": input.location,
+          "askingRent": input.askingRent,
+          "monthlyIncome": input.monthlyIncome,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        print("✅ API SUCCESS");
+        
+        // 2. Decode the body and update the 'result' variable
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        result = AnalysisResult.fromJson(data);
+        
+      } else {
+        error = "Server error: ${response.statusCode}";
+        print("❌ SERVER ERROR: $error");
+      }
     } catch (e) {
-      error = 'Unable to analyse this property right now.';
+      error = e.toString();
+      print("❌ API ERROR: $e");
     } finally {
+      // 3. Stop loading and tell Flutter to rebuild the screen
       isLoading = false;
-      notifyListeners();
+      notifyListeners(); 
     }
   }
 }
