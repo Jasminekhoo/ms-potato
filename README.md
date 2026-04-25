@@ -1,40 +1,100 @@
 # ms-potato
 
-UMHackathon 2026
+AI Rent Advisor for UMHackathon 2026.
 
-# AI Rent Advisor
+This repository contains a Node.js backend, a Flutter frontend, and a Python AI module.
 
-Frontend scaffold for Member 2 is ready under `frontend_flutter`.
+## What The App Does
 
-## What is implemented
+- Lets a user enter a property name, location, asking rent, and monthly income.
+- Analyses the rental using backend logic and fallback demo data.
+- Shows result cards for verdict, all-in monthly cost, risk, negotiation tips, and source transparency.
+- Includes a landlord payment page with tenant tracking, payment summaries, and tenant rating tools.
 
-- Input form screen
-  - `property name`, `location`, `asking rent`, `monthly income`
-- Result dashboard
-  - Verdict card
-  - True all-in cost breakdown card
-  - Risk radar card
-  - Negotiation coach card
-- Loading state
-  - Animated skeleton placeholders while waiting
-- Comparison page
-  - Side-by-side comparison cards for rent-focused decision making
+## Project Structure
 
-## Frontend Routes
+- `server.js` - Node.js backend API
+- `financial_risk_engine.js` - rental risk engine used by the backend
+- `frontend_flutter/` - Flutter app
+- `frontend_flutter/ai_module/` - Python AI module
 
-- `/` Home
-- `/input` Analysis input
-- `/result` Analysis result
-- `/compare` Comparison page
-- `/login` Login scaffold
-- `/signup` Signup scaffold
-- `/about` About page
+## Requirements
 
-## API Contract expected from backend
+- Node.js
+- Flutter SDK
+- Python 3
+- Chrome browser for Flutter web
 
-### POST /analyse
+## Install Dependencies
 
-Request:
+### Backend
+
+From the repository root:
+
+```powershell
+npm install
+```
+
+### Flutter frontend
+
+```powershell
+cd frontend_flutter
+flutter pub get
+```
+
+### Python AI module
+
+```powershell
+cd frontend_flutter/ai_module
+pip install -r requirements.txt
+```
+
+## How To Run
+
+Use three terminals.
+
+### Terminal 1: Backend
+
+From the repository root:
+
+```powershell
+npm start
+```
+
+The backend runs on:
+
+```text
+http://localhost:3001
+```
+
+### Terminal 2: Flutter frontend
+
+```powershell
+cd frontend_flutter
+flutter run -d chrome
+```
+
+### Terminal 3: AI module
+
+```powershell
+cd frontend_flutter/ai_module
+python app.py
+```
+
+## Notes
+
+- If you run the frontend before the backend, the app can still show fallback demo data.
+- If Chrome is not detected, run `flutter devices` and pick another available target.
+- If Flutter web fails to launch, make sure the Flutter SDK is installed and `flutter doctor` is clean.
+- On Windows, some Flutter desktop setups may require Developer Mode, but Chrome web does not.
+
+## API Overview
+
+The frontend expects the backend to expose these endpoints.
+
+### `POST /analyse`
+
+Example request:
 
 ```json
 {
@@ -45,7 +105,7 @@ Request:
 }
 ```
 
-Response:
+Example response:
 
 ```json
 {
@@ -65,9 +125,9 @@ Response:
 }
 ```
 
-### POST /compare
+### `POST /compare`
 
-Request:
+Example request:
 
 ```json
 {
@@ -82,7 +142,7 @@ Request:
 }
 ```
 
-Response:
+Example response:
 
 ```json
 {
@@ -98,37 +158,23 @@ Response:
 }
 ```
 
-## Run
+## Frontend Routes
 
-Run the app from the `frontend_flutter` folder:
+- `/` Home
+- `/input` Analysis input
+- `/result` Analysis result
+- `/compare` Comparison page
+- `/payments` Payments page
+- `/login` Login screen
+- `/signup` Signup screen
+- `/about` About page
 
-```powershell
-cd "C:\Users\user\OneDrive\Desktop\ms-potato_umh\frontend_flutter"
-flutter pub get
-flutter run -d windows
-```
+## Troubleshooting
 
-If you want to open it in Chrome instead, use:
+- If `npm start` fails, check whether port `3001` is already in use.
+- If Flutter shows a blank page, confirm the backend is running and `flutter run -d chrome` is started from `frontend_flutter`.
+- If Python does not start, make sure you are inside `frontend_flutter/ai_module` and that `requirements.txt` is installed.
 
-```powershell
-cd "C:\Users\user\OneDrive\Desktop\ms-potato_umh\frontend_flutter"
-flutter pub get
-flutter run -d chrome
-```
+## License
 
-If `chrome` is not available, check your devices with:
-
-```powershell
-flutter devices
-```
-
-If you are running the project for the first time on Windows, make sure Developer Mode is enabled in Windows settings so Flutter can create desktop symlinks.
-
-1. Install Flutter SDK
-2. Open the project in VS Code or Terminal
-3. Run the commands above from `frontend_flutter`
-
-## Notes
-
-- If backend is down or slow (>8s), frontend uses mocked fallback responses for demo continuity.
-- API base URL is set in `frontend_flutter/lib/constants/config.dart`.
+MIT
