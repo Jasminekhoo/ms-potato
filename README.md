@@ -2,6 +2,9 @@
 
 AI Rent Advisor for UMHackathon 2026.
 
+Demo / Presentation:
+https://drive.google.com/file/d/1Ab0-za_YA4clAqr_LZLS0Fbagkc6_gse/view?usp=sharing
+
 This repository contains a Node.js backend, a Flutter frontend, and a Python AI module.
 
 ## What The App Does
