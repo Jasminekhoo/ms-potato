@@ -23,11 +23,11 @@ class ProfileScreen extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('Please login to view your profile.'),
+                    const Text('Please sign in from Home to view your profile.'),
                     const SizedBox(height: 12),
                     FilledButton(
-                      onPressed: () => context.go('/login'),
-                      child: const Text('Go to Login'),
+                      onPressed: () => context.go('/'),
+                      child: const Text('Go to Home'),
                     ),
                   ],
                 ),

@@ -460,6 +460,39 @@ function findPropertyMatch({ propertyName, location, area }) {
   return match || null;
 }
 
+function buildNegotiationTipsFromInput({
+  property,
+  askingRent,
+  monthlyIncome,
+  riskSeverity,
+  affordabilityLabel,
+  trueCostMonthly,
+  hiddenMonthly
+}) {
+  const ask = Number(askingRent) || property.monthly_rent;
+  const income = Number(monthlyIncome) || 0;
+  const market = Number(property.averageMarketRent) || ask;
+  const realMonthly = Number(trueCostMonthly) || ask;
+  const hidden = Number(hiddenMonthly) || Math.max(0, realMonthly - ask);
+  const diff = ask - market;
+  const target = diff > 0 ? Math.round(market * 0.96) : Math.round(ask * 0.97);
+  const ratio = income > 0 ? (realMonthly / income) : 0;
+
+  const opening = diff > 0
+    ? `Hi, I like ${property.name}. Listed rent is RM${ask}, but real monthly cost is about RM${realMonthly} (including ~RM${hidden} hidden costs), while nearby market is around RM${market}. Can we discuss RM${target}?`
+    : `Hi, I like ${property.name}. Can we discuss a tenant-friendly rate around RM${target} for a longer commitment?`;
+
+  const affordabilityLine = ratio > 0.35 || affordabilityLabel === 'RISKY'
+    ? `At real monthly cost RM${realMonthly}, housing is about ${(ratio * 100).toFixed(1)}% of my income, so RM${target} is more sustainable.`
+    : `I can pay reliably monthly and would like a fair adjustment to RM${target} for long-term stability.`;
+
+  const riskLine = String(riskSeverity || '').toLowerCase() === 'high'
+    ? 'Given reported maintenance/risk concerns, I request a discount or maintenance commitment in writing.'
+    : 'I can proceed quickly if we agree on the revised rental and standard maintenance response terms.';
+
+  return [opening, affordabilityLine, riskLine];
+}
+
 // ============================================================
 // API ROUTES
 // ============================================================
@@ -601,28 +634,33 @@ app.post('/api/analyse', async (req, res) => {
       'Maintenance Reserve': trueCost.breakdown.maintenanceProvision
     };
 
-    const negotiationTips = Array.isArray(aiNegotiationData?.strategy) && aiNegotiationData.strategy.length > 0
-      ? aiNegotiationData.strategy
-      : [
-        `Market rate is RM${property.averageMarketRent}. Target RM${Math.round(property.averageMarketRent * 0.95)}`,
-        `${property.reviewCount} reviews show ${affordability.label} satisfaction`,
-        'Emphasize your financial stability if you meet income requirements'
-      ];
-
     const hiddenCostTotal = Object.values(mergedHiddenCosts).reduce((sum, value) => {
       const parsed = typeof value === 'number' ? value : parseMoney(value);
       return sum + (Number.isNaN(parsed) ? 0 : parsed);
     }, 0);
     const computedTotal = Number(askingRent) + hiddenCostTotal;
     const aiEstimatedTotal = parseMoney(aiCostData?.estimated_total_monthly);
+    const resolvedTrueCostMonthly = !Number.isNaN(aiEstimatedTotal) && aiEstimatedTotal > 0
+      ? aiEstimatedTotal
+      : (computedTotal > 0 ? computedTotal : trueCost.firstYearMonthlyAvg);
+
+    const negotiationTips = Array.isArray(aiNegotiationData?.strategy) && aiNegotiationData.strategy.length > 0
+      ? aiNegotiationData.strategy
+      : buildNegotiationTipsFromInput({
+        property,
+        askingRent,
+        monthlyIncome,
+        riskSeverity: riskRadar.severity,
+        affordabilityLabel: affordability.label,
+        trueCostMonthly: resolvedTrueCostMonthly,
+        hiddenMonthly: hiddenCostTotal
+      });
 
     const response = {
       verdict: resolvedVerdictData.verdict || 'ACCEPTABLE',
       explanation: resolvedVerdictData.final_reason || 'Balanced option for your needs',
       listedRent: askingRent,
-      trueCostMonthly: !Number.isNaN(aiEstimatedTotal) && aiEstimatedTotal > 0
-        ? aiEstimatedTotal
-        : (computedTotal > 0 ? computedTotal : trueCost.firstYearMonthlyAvg),
+      trueCostMonthly: resolvedTrueCostMonthly,
       hiddenCosts: mergedHiddenCosts,
       riskScore: riskRadar.score,
       riskSummary: aiRiskData?.summary || (riskRadar.severity + ' Risk'),
@@ -801,6 +839,7 @@ app.post('/api/negotiation', async (req, res) => {
     }
 
     const riskRadar = financialEngine.getRiskRadar(property);
+    const trueCost = financialEngine.calculateTrueCost(property);
     const marketDiff = property.monthly_rent - property.averageMarketRent;
 
     // Call AI for negotiation advice
@@ -819,14 +858,19 @@ app.post('/api/negotiation', async (req, res) => {
     const targetPrice = Math.round(property.averageMarketRent * 0.95);
     const landlord = db.users.find(u => u.id === property.landlordId);
 
-    const negotiationTips = aiNegotiationData?.strategy || [
-      `"The market rate in ${property.location} is around RM${property.averageMarketRent}. Can we discuss RM${targetPrice}?"`,
-      'Highlight your financial stability and positive payment history',
-      'Offer longer lease term (12-24 months) in exchange for lower rent'
-    ];
+    const hiddenMonthly = Math.max(0, trueCost.firstYearMonthlyAvg - property.monthly_rent);
+    const negotiationTips = aiNegotiationData?.strategy || buildNegotiationTipsFromInput({
+      property,
+      askingRent: property.monthly_rent,
+      monthlyIncome,
+      riskSeverity: riskRadar.severity,
+      affordabilityLabel: 'N/A',
+      trueCostMonthly: trueCost.firstYearMonthlyAvg,
+      hiddenMonthly
+    });
 
     const whatsappMessage = aiNegotiationData?.message ||
-      `Hi, I'm very interested in your property at ${property.name}. The asking price is RM${property.monthly_rent}, but I found similar units in the area for RM${property.averageMarketRent}. Would you be open to negotiating? I'm a reliable tenant with a stable income of RM${monthlyIncome}/month. Looking forward to hearing from you!`;
+      `Hi, I'm very interested in your property at ${property.name}. Listed rent is RM${property.monthly_rent}, but real monthly cost is around RM${Math.round(trueCost.firstYearMonthlyAvg)} including hidden costs. Nearby market is around RM${property.averageMarketRent}. Would you consider RM${targetPrice}? I have stable monthly income of RM${monthlyIncome || 'N/A'}.`;
 
     const response = {
       currentAskingRent: property.monthly_rent,

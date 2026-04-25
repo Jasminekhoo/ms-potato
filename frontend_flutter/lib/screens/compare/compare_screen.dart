@@ -34,12 +34,15 @@ class _CompareScreenState extends State<CompareScreen> {
   String? _error;
   DateTime? _lastSavedAt;
   final Map<_CompareDraft, String> _draftErrors = {};
+  final ApiService _api = ApiService();
+  Map<String, List<String>> _propertyOptions = const {};
+  bool _optionsLoading = true;
 
   List<_CompareDraft> _defaultDrafts() {
     return [
-      _CompareDraft('Vista Harmoni Residences', 'Cheras', '1,850', '6,500'),
-      _CompareDraft('Midcity Heights', 'Taman Midah', '2,100', '6,500'),
-      _CompareDraft('Lakepoint Suites', 'Sri Petaling', '2,300', '6,500'),
+      _CompareDraft('Vista Harmoni', 'Cheras', '1,850', '6,500'),
+      _CompareDraft('Sentosa Green Heights', 'Sentul', '2,100', '6,500'),
+      _CompareDraft('Lakepoint Suites', 'Petaling Jaya', '2,300', '6,500'),
     ];
   }
 
@@ -47,6 +50,7 @@ class _CompareScreenState extends State<CompareScreen> {
   void initState() {
     super.initState();
     _drafts = _defaultDrafts();
+    _loadPropertyOptions();
     _loadDrafts();
   }
 
@@ -82,7 +86,7 @@ class _CompareScreenState extends State<CompareScreen> {
               ))
           .toList();
 
-      final response = await ApiService().compare(properties);
+      final response = await _api.compare(properties);
       if (!mounted) return;
 
       setState(() {
@@ -101,6 +105,15 @@ class _CompareScreenState extends State<CompareScreen> {
         });
       }
     }
+  }
+
+  Future<void> _loadPropertyOptions() async {
+    final options = await _api.getPropertyOptions();
+    if (!mounted) return;
+    setState(() {
+      _propertyOptions = options;
+      _optionsLoading = false;
+    });
   }
 
   bool _looksLikeSupportedDomain(String host) {
@@ -487,6 +500,11 @@ class _CompareScreenState extends State<CompareScreen> {
                     ],
                   ),
                   const SizedBox(height: 8),
+                  if (_optionsLoading)
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 10),
+                      child: LinearProgressIndicator(minHeight: 2),
+                    ),
                   ReorderableListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -511,6 +529,7 @@ class _CompareScreenState extends State<CompareScreen> {
                             _drafts[index],
                             _drafts[index].listingUrl.text,
                           ),
+                          propertyOptions: _propertyOptions,
                           onChanged: _saveDrafts,
                           dragHandle: ReorderableDragStartListener(
                             index: index,
@@ -607,6 +626,7 @@ class _CompareInputCard extends StatelessWidget {
     required this.domainHint,
     required this.onPasteUrl,
     required this.onParseUrl,
+    required this.propertyOptions,
     required this.onChanged,
     required this.dragHandle,
     this.errorText,
@@ -618,6 +638,7 @@ class _CompareInputCard extends StatelessWidget {
   final String domainHint;
   final VoidCallback onPasteUrl;
   final VoidCallback onParseUrl;
+  final Map<String, List<String>> propertyOptions;
   final VoidCallback onChanged;
   final Widget dragHandle;
   final String? errorText;
@@ -625,6 +646,17 @@ class _CompareInputCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final areas = propertyOptions.keys.toList()..sort((a, b) => a.compareTo(b));
+    final selectedArea = areas.contains(draft.location.text.trim())
+        ? draft.location.text.trim()
+        : null;
+    final areaProperties = selectedArea == null
+        ? const <String>[]
+        : (propertyOptions[selectedArea] ?? const <String>[]);
+    final selectedProperty = areaProperties.contains(draft.propertyName.text.trim())
+        ? draft.propertyName.text.trim()
+        : null;
+
     return SizedBox(
       width: double.infinity,
       child: Container(
@@ -688,14 +720,42 @@ class _CompareInputCard extends StatelessWidget {
             const SizedBox(height: 8),
             TextField(
               controller: draft.propertyName,
-              onChanged: (_) => onChanged(),
-              decoration: const InputDecoration(labelText: 'Property name'),
+              readOnly: true,
+              decoration: const InputDecoration(
+                labelText: 'Property name',
+                helperText: 'Select area and property from available list',
+              ),
             ),
             const SizedBox(height: 8),
-            TextField(
-              controller: draft.location,
-              onChanged: (_) => onChanged(),
-              decoration: const InputDecoration(labelText: 'Location'),
+            DropdownButtonFormField<String>(
+              value: selectedArea,
+              decoration: const InputDecoration(labelText: 'Area'),
+              items: areas
+                  .map((area) =>
+                      DropdownMenuItem(value: area, child: Text(area)))
+                  .toList(),
+              onChanged: (value) {
+                if (value == null) return;
+                final nextProperties = propertyOptions[value] ?? const <String>[];
+                draft.location.text = value;
+                draft.propertyName.text =
+                    nextProperties.isNotEmpty ? nextProperties.first : '';
+                onChanged();
+              },
+            ),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              value: selectedProperty,
+              decoration:
+                  const InputDecoration(labelText: 'Available properties'),
+              items: areaProperties
+                  .map((property) =>
+                      DropdownMenuItem(value: property, child: Text(property)))
+                  .toList(),
+              onChanged: (value) {
+                draft.propertyName.text = value ?? '';
+                onChanged();
+              },
             ),
             const SizedBox(height: 8),
             TextField(

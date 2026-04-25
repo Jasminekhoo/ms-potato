@@ -33,7 +33,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
           final user = FirebaseAuth.instance.currentUser;
 
           if (user == null) {
-            return _GuestPrompt(onLogin: () => context.go('/login'));
+            return _GuestPrompt(onLogin: () => context.go('/'));
           }
 
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -82,11 +82,11 @@ class _GuestPrompt extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('Please login to view payments.'),
+                const Text('Please sign in from Home to view payments.'),
                 const SizedBox(height: 12),
                 FilledButton(
                   onPressed: onLogin,
-                  child: const Text('Go to Login'),
+                  child: const Text('Go to Home'),
                 ),
               ],
             ),
@@ -105,6 +105,10 @@ class _OverviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isLandlord = role == 'landlord';
+    if (isLandlord) {
+      return const _LandlordOverviewCard();
+    }
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -121,28 +125,59 @@ class _OverviewCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              isLandlord
-                  ? 'Review which tenants are on time, who is late, and rate payment behavior.'
-                  : 'Track whether your rent was paid on time and submit your monthly payment.',
+              'Track whether your rent was paid on time and submit your monthly payment.',
             ),
             const SizedBox(height: 16),
             Wrap(
               spacing: 12,
               runSpacing: 12,
-              children: isLandlord
-                  ? const [
-                      _StatusChip(label: 'On-time tenants', value: '10'),
-                      _StatusChip(label: 'Late tenants', value: '2'),
-                      _StatusChip(label: 'Outstanding rent', value: 'RM 3,600'),
-                      _StatusChip(label: 'Avg tenant rating', value: '4.6 / 5'),
-                    ]
-                  : const [
-                      _StatusChip(label: 'On-time streak', value: '8 months'),
-                      _StatusChip(label: 'Late payments', value: '1 this year'),
-                      _StatusChip(
-                          label: 'Current status', value: 'Good standing'),
-                      _StatusChip(label: 'Next due date', value: '05 May 2026'),
-                    ],
+              children: const [
+                _StatusChip(label: 'On-time streak', value: '8 months'),
+                _StatusChip(label: 'Late payments', value: '1 this year'),
+                _StatusChip(label: 'Current status', value: 'Good standing'),
+                _StatusChip(label: 'Next due date', value: '05 May 2026'),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LandlordOverviewCard extends StatelessWidget {
+  const _LandlordOverviewCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Landlord Payment Overview',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Quick summary of landlord payment status.',
+            ),
+            const SizedBox(height: 16),
+            const Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                _StatusChip(label: 'On-time tenants', value: '10'),
+                _StatusChip(label: 'Late tenants', value: '2'),
+                _StatusChip(label: 'Pending tenants', value: '3'),
+                _StatusChip(label: 'Outstanding rent', value: 'RM 3,600'),
+                _StatusChip(label: 'Avg tenant rating', value: '4.6 / 5'),
+                _StatusChip(label: 'Rated tenants', value: '7'),
+              ],
             ),
           ],
         ),
@@ -162,6 +197,7 @@ class _TenantPayRentCardState extends State<_TenantPayRentCard> {
   final _amountController = TextEditingController(text: '1800');
   final _referenceController = TextEditingController();
   String _method = 'Online Banking';
+  bool _confirmedTerms = false;
   bool _isProcessing = false;
 
   @override
@@ -224,14 +260,29 @@ class _TenantPayRentCardState extends State<_TenantPayRentCard> {
                 labelText: 'Transaction reference / note',
               ),
             ),
+            const SizedBox(height: 12),
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              value: _confirmedTerms,
+              onChanged: _isProcessing
+                  ? null
+                  : (value) {
+                      setState(() {
+                        _confirmedTerms = value ?? false;
+                      });
+                    },
+              title: const Text('I confirm this month rent amount and payment details are correct.'),
+            ),
             const SizedBox(height: 16),
             Row(
               children: [
                 FilledButton.icon(
-                  onPressed: _isProcessing ? null : _submitPayment,
+                  onPressed: (_isProcessing || !_confirmedTerms)
+                      ? null
+                      : _submitPayment,
                   icon: const Icon(Icons.payment_outlined),
                   label:
-                      Text(_isProcessing ? 'Processing...' : 'Submit Payment'),
+                      Text(_isProcessing ? 'Processing...' : 'Confirm & Pay'),
                 ),
                 const SizedBox(width: 12),
                 OutlinedButton(
@@ -242,6 +293,7 @@ class _TenantPayRentCardState extends State<_TenantPayRentCard> {
                             _amountController.text = '1800';
                             _referenceController.clear();
                             _method = 'Online Banking';
+                            _confirmedTerms = false;
                           });
                         },
                   child: const Text('Reset'),
@@ -283,6 +335,29 @@ class _TenantPayRentCardState extends State<_TenantPayRentCard> {
         return;
       }
 
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Confirm Rent Payment'),
+          content: Text(
+            'Pay RM ${amount.toStringAsFixed(0)} via $_method?\nReference: ${_referenceController.text.trim().isEmpty ? 'N/A' : _referenceController.text.trim()}',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Confirm'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) {
+        return;
+      }
+
       final userDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
@@ -310,6 +385,9 @@ class _TenantPayRentCardState extends State<_TenantPayRentCard> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Payment saved to the payments log.')),
       );
+      setState(() {
+        _confirmedTerms = false;
+      });
     } on FirebaseException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -516,124 +594,32 @@ class _LandlordCollectionsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      return const SizedBox.shrink();
-    }
-
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
-        child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-          stream: FirebaseFirestore.instance
-              .collection('rent_payments')
-              .where('landlordId', isEqualTo: user.uid)
-              .snapshots(),
-          builder: (context, paymentSnapshot) {
-            if (paymentSnapshot.connectionState == ConnectionState.waiting) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(vertical: 18),
-                child: Center(child: CircularProgressIndicator()),
-              );
-            }
-
-            if (paymentSnapshot.hasError) {
-              return const Text('Unable to load collection overview.');
-            }
-
-            final paymentDocs = paymentSnapshot.data?.docs ?? [];
-
-            return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-              stream: FirebaseFirestore.instance
-                  .collection('tenant_ratings')
-                  .where('landlordId', isEqualTo: user.uid)
-                  .snapshots(),
-              builder: (context, ratingSnapshot) {
-                final ratingDocs = ratingSnapshot.data?.docs ?? [];
-                final now = DateTime.now();
-
-                double receivedToday = 0;
-                int pendingCount = 0;
-                int lateCount = 0;
-
-                for (final doc in paymentDocs) {
-                  final data = doc.data();
-                  final status =
-                      ((data['status'] as String?) ?? '').trim().toLowerCase();
-                  final amount = _asDouble(data['amount']);
-                  final createdAt = _parseDateTime(data['createdAtLocal']);
-
-                  if (_isSameDay(createdAt, now)) {
-                    receivedToday += amount;
-                  }
-                  if (status == 'submitted' || status == 'pending') {
-                    pendingCount += 1;
-                  }
-                  if (status.contains('late')) {
-                    lateCount += 1;
-                  }
-                }
-
-                final ratedTenantIds = <String>{};
-                double ratingTotal = 0;
-                for (final doc in ratingDocs) {
-                  final data = doc.data();
-                  final tenantId = (data['tenantId'] as String?)?.trim();
-                  if (tenantId != null && tenantId.isNotEmpty) {
-                    ratedTenantIds.add(tenantId);
-                  }
-                  ratingTotal += _asDouble(data['rating']);
-                }
-                final avgRating =
-                    ratingDocs.isEmpty ? 0 : ratingTotal / ratingDocs.length;
-
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Collections Overview',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                    ),
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
-                      children: [
-                        _StatusChip(
-                          label: 'Received today',
-                          value: 'RM ${receivedToday.toStringAsFixed(0)}',
-                        ),
-                        _StatusChip(
-                          label: 'Pending',
-                          value: '$pendingCount payments',
-                        ),
-                        _StatusChip(
-                          label: 'Late this month',
-                          value: '$lateCount payments',
-                        ),
-                        _StatusChip(
-                          label: 'Avg tenant rating',
-                          value: ratingDocs.isEmpty
-                              ? 'No ratings yet'
-                              : '${avgRating.toStringAsFixed(1)} / 5',
-                        ),
-                        _StatusChip(
-                          label: 'Rated tenants',
-                          value: '${ratedTenantIds.length}',
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Live data for your assigned tenants only.',
-                    ),
-                  ],
-                );
-              },
-            );
-          },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Collections Overview',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Latest collection summary for the landlord.',
+            ),
+            const SizedBox(height: 16),
+            const Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                _StatusChip(label: 'Received today', value: 'RM 9,200'),
+                _StatusChip(label: 'Pending amount', value: 'RM 3,600'),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -642,6 +628,24 @@ class _LandlordCollectionsCard extends StatelessWidget {
 
 class _LandlordTenantStatusCard extends StatelessWidget {
   const _LandlordTenantStatusCard();
+
+  static const List<_TenantTrackerRow> _fallbackRows = [
+    _TenantTrackerRow(
+      tenantName: 'Ahmad Karim • Vista Harmoni',
+      amountText: 'RM 2200',
+      statusText: 'On Time',
+    ),
+    _TenantTrackerRow(
+      tenantName: 'Siti Nurhayati • Sentul Point Suites',
+      amountText: 'RM 1800',
+      statusText: 'Pending',
+    ),
+    _TenantTrackerRow(
+      tenantName: 'Rajesh Kumar • Ekonomi Flat Kompleks',
+      amountText: 'RM 1650',
+      statusText: 'Late',
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -772,6 +776,11 @@ class _LandlordTenantStatusCard extends StatelessWidget {
                       );
                     }).toList();
 
+                    final useFallbackRows = rows.isEmpty;
+                    if (useFallbackRows) {
+                      rows.addAll(_fallbackRows);
+                    }
+
                     rows.sort((a, b) => a.tenantName.compareTo(b.tenantName));
 
                     return Column(
@@ -785,41 +794,40 @@ class _LandlordTenantStatusCard extends StatelessWidget {
                                   ),
                         ),
                         const SizedBox(height: 10),
-                        const Text(
-                          'Track on-time, late, pending, and rating status from live records.',
+                        Text(
+                          useFallbackRows
+                              ? 'Showing sample tracker rows because no assigned tenant records were found yet.'
+                              : 'Track on-time, late, pending, and rating status from live records.',
                         ),
                         const SizedBox(height: 14),
-                        if (rows.isEmpty)
-                          const Text('No tenant users found yet.')
-                        else
-                          ...rows.take(12).map(
-                                (row) => Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 8),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                          flex: 4, child: Text(row.tenantName)),
-                                      Expanded(
-                                          flex: 3, child: Text(row.amountText)),
-                                      Expanded(
-                                          flex: 5, child: Text(row.statusText)),
-                                      FilledButton.tonal(
-                                        onPressed: () {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                  'Reminder sent to ${row.tenantName}.'),
-                                            ),
-                                          );
-                                        },
-                                        child: const Text('Remind'),
-                                      ),
-                                    ],
-                                  ),
+                        ...rows.take(12).map(
+                              (row) => Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 8),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                        flex: 4, child: Text(row.tenantName)),
+                                    Expanded(
+                                        flex: 3, child: Text(row.amountText)),
+                                    Expanded(
+                                        flex: 5, child: Text(row.statusText)),
+                                    FilledButton.tonal(
+                                      onPressed: () {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                                'Reminder sent to ${row.tenantName}.'),
+                                          ),
+                                        );
+                                      },
+                                      child: const Text('Remind'),
+                                    ),
+                                  ],
                                 ),
                               ),
+                            ),
                       ],
                     );
                   },
@@ -841,6 +849,18 @@ class _LandlordRatingCard extends StatefulWidget {
 }
 
 class _LandlordRatingCardState extends State<_LandlordRatingCard> {
+  static const List<_TenantOption> _sampleTenantOptions = [
+    _TenantOption(id: 'sample_user_001', label: 'Ahmad Karim • Vista Harmoni'),
+    _TenantOption(
+      id: 'sample_user_002',
+      label: 'Siti Nurhayati • Sentul Point Suites',
+    ),
+    _TenantOption(
+      id: 'sample_user_003',
+      label: 'Rajesh Kumar • Ekonomi Flat Kompleks',
+    ),
+  ];
+
   double _rating = 4.4;
   String? _selectedTenantId;
   String? _selectedTenantLabel;
@@ -892,7 +912,7 @@ class _LandlordRatingCardState extends State<_LandlordRatingCard> {
                   return const Text('Unable to load tenant list.');
                 }
 
-                final options = (snapshot.data?.docs ?? []).map((doc) {
+                final liveOptions = (snapshot.data?.docs ?? []).map((doc) {
                   final data = doc.data();
                   final name = (data['name'] as String?)?.trim();
                   final email = (data['email'] as String?)?.trim();
@@ -902,11 +922,9 @@ class _LandlordRatingCardState extends State<_LandlordRatingCard> {
                   return _TenantOption(id: doc.id, label: label);
                 }).toList();
 
-                if (options.isEmpty) {
-                  return const Text(
-                    'No assigned tenants found yet.',
-                  );
-                }
+                final options = liveOptions.isNotEmpty
+                    ? liveOptions
+                    : _sampleTenantOptions;
 
                 final hasSelected =
                     options.any((o) => o.id == _selectedTenantId);
@@ -946,6 +964,40 @@ class _LandlordRatingCardState extends State<_LandlordRatingCard> {
                 );
               },
             ),
+            if (FirebaseAuth.instance.currentUser != null)
+              StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                stream: FirebaseFirestore.instance
+                    .collection('users')
+                    .where('role', isEqualTo: 'tenant')
+                    .where(
+                      'assignedLandlordId',
+                      isEqualTo: FirebaseAuth.instance.currentUser?.uid,
+                    )
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  final liveOptions = (snapshot.data?.docs ?? []).map((doc) {
+                    final data = doc.data();
+                    final name = (data['name'] as String?)?.trim();
+                    final email = (data['email'] as String?)?.trim();
+                    final label = (name != null && name.isNotEmpty)
+                        ? name
+                        : (email ?? doc.id);
+                    return _TenantOption(id: doc.id, label: label);
+                  }).toList();
+
+                  if (liveOptions.isNotEmpty) {
+                    return const SizedBox.shrink();
+                  }
+
+                  return const Padding(
+                    padding: EdgeInsets.only(top: 8),
+                    child: Text(
+                      'No assigned tenants found yet, so sample tenants are shown for now.',
+                      style: TextStyle(color: Colors.black54),
+                    ),
+                  );
+                },
+              ),
             const SizedBox(height: 16),
             Row(
               children: [
@@ -978,7 +1030,7 @@ class _LandlordRatingCardState extends State<_LandlordRatingCard> {
             ),
             const SizedBox(height: 16),
             FilledButton.icon(
-              onPressed: _saveRating,
+              onPressed: _selectedTenantId == null ? null : _saveRating,
               icon: const Icon(Icons.star_border),
               label: const Text('Save Rating'),
             ),

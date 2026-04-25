@@ -54,13 +54,8 @@ class TopNavBar extends StatelessWidget {
         if (isWide) const SizedBox(width: 10),
         _NotificationButton(),
         const SizedBox(width: 6),
-        if (user == null) ...[
-          _NavItem(
-              label: 'Login', path: '/login', active: location == '/login'),
-          const SizedBox(width: 10),
-          _NavItem(
-              label: 'Sign Up', path: '/signup', active: location == '/signup'),
-        ] else
+        if (user == null)
+          _NavItem(label: 'Home', path: '/', active: location == '/') else
           FutureBuilder<String>(
             future: _resolveRole(user.uid),
             builder: (context, snapshot) {
@@ -90,7 +85,7 @@ class TopNavBar extends StatelessWidget {
                     onPressed: () async {
                       await FirebaseAuth.instance.signOut();
                       if (context.mounted) {
-                        context.go('/login');
+                        context.go('/');
                       }
                     },
                     icon: const Icon(Icons.logout_outlined, size: 18),

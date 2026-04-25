@@ -6,8 +6,6 @@ import 'dart:async';
 
 import '../screens/analysis/input_screen.dart';
 import '../screens/analysis/result_screen.dart';
-import '../screens/auth/login_screen.dart';
-import '../screens/auth/signup_screen.dart';
 import '../screens/compare/compare_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/home/tenant_home_screen.dart';
@@ -31,7 +29,7 @@ final appRouter = GoRouter(
     final isLandlordHome = location == '/landlord-home';
 
     if (user == null && (isProfilePage || isTenantHome || isLandlordHome)) {
-      return '/login';
+      return '/';
     }
 
     if (user != null && isAuthPage) {
@@ -61,8 +59,8 @@ final appRouter = GoRouter(
       path: '/landlord-home',
       builder: (context, state) => const LandlordHomeScreen(),
     ),
-    GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
-    GoRoute(path: '/signup', builder: (context, state) => const SignupScreen()),
+    GoRoute(path: '/login', builder: (context, state) => const HomeScreen()),
+    GoRoute(path: '/signup', builder: (context, state) => const HomeScreen()),
     GoRoute(path: '/input', builder: (context, state) => const InputScreen()),
     GoRoute(path: '/result', builder: (context, state) => const ResultScreen()),
     GoRoute(

@@ -70,21 +70,25 @@ class LandlordHomeScreen extends StatelessWidget {
                 title: 'Payment Tracking',
                 subtitle: 'See whether rent was paid on time or late.',
                 icon: Icons.payments_outlined,
+                path: '/payments',
               ),
               _FeatureItem(
                 title: 'Tenant Rating',
                 subtitle: 'Rate tenants based on payment reliability.',
                 icon: Icons.star_outline,
+                path: '/payments',
               ),
               _FeatureItem(
                 title: 'Tenant Profiles',
                 subtitle: 'Keep contact and rental history in one place.',
                 icon: Icons.groups_outlined,
+                path: '/profile',
               ),
               _FeatureItem(
                 title: 'Income Overview',
                 subtitle: 'Review rental income and outstanding months.',
                 icon: Icons.account_balance_wallet_outlined,
+                path: '/payments',
               ),
             ],
           ),
@@ -98,7 +102,6 @@ class LandlordHomeScreen extends StatelessWidget {
               _MiniStat(label: 'Units occupied', value: '12 / 13'),
             ],
           ),
-          const SizedBox(height: 20),
           const _FeatureGrid(
             title: 'Suggested Next Steps',
             items: [
@@ -106,11 +109,13 @@ class LandlordHomeScreen extends StatelessWidget {
                 title: 'Review Payments',
                 subtitle: 'See who paid on time and who is late.',
                 icon: Icons.receipt_long_outlined,
+                path: '/payments',
               ),
               _FeatureItem(
                 title: 'Rate Tenants',
                 subtitle: 'Leave a score after each payment cycle.',
                 icon: Icons.star_outline,
+                path: '/payments',
               ),
             ],
           ),
@@ -153,28 +158,34 @@ class _FeatureItem extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.icon,
+    required this.path,
   });
 
   final String title;
   final String subtitle;
   final IconData icon;
+  final String path;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: 250,
       child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, color: Theme.of(context).colorScheme.primary),
-              const SizedBox(height: 10),
-              Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
-              const SizedBox(height: 6),
-              Text(subtitle, style: const TextStyle(color: Colors.black54)),
-            ],
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => context.go(path),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(icon, color: Theme.of(context).colorScheme.primary),
+                const SizedBox(height: 10),
+                Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 6),
+                Text(subtitle, style: const TextStyle(color: Colors.black54)),
+              ],
+            ),
           ),
         ),
       ),

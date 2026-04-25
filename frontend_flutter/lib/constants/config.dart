@@ -1,3 +1,3 @@
 class AppConfig {
-  static const String apiBaseUrl = 'http://localhost:8080';
+  static const String apiBaseUrl = 'http://127.0.0.1:3001/api';
 }

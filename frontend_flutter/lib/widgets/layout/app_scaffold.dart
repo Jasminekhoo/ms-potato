@@ -193,7 +193,7 @@ class _SideNavDrawerState extends State<_SideNavDrawer> {
                       Navigator.of(context).pop();
                       await FirebaseAuth.instance.signOut();
                       if (context.mounted) {
-                        context.go('/login');
+                        context.go('/');
                       }
                     },
                   ),

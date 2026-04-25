@@ -30,21 +30,31 @@ class AnalysisResult {
     required this.suggestion,
   });
 
+  static double _asDouble(dynamic value) {
+    if (value is num) return value.toDouble();
+    if (value is String) {
+      final cleaned = value.replaceAll(RegExp(r'[^0-9.]'), '');
+      return double.tryParse(cleaned) ?? 0.0;
+    }
+    return 0.0;
+  }
+
   factory AnalysisResult.fromJson(Map<String, dynamic> json) {
     final costs = json['hiddenCosts'] as Map<String, dynamic>? ?? {};
-    final mappedCosts = costs.map((key, value) => MapEntry(key, (value as num).toDouble()));
+    final mappedCosts =
+        costs.map((key, value) => MapEntry(key, _asDouble(value)));
     final affordability = json['affordability'] as Map<String, dynamic>? ?? {};
 
     return AnalysisResult(
       verdict: json['verdict'] ?? 'UNKNOWN',
       explanation: json['explanation'] ?? '',
-      listedRent: (json['listedRent'] as num?)?.toDouble() ?? 0.0,
-      trueCostMonthly: (json['trueCostMonthly'] as num?)?.toDouble() ?? 0.0,
+      listedRent: _asDouble(json['listedRent']),
+      trueCostMonthly: _asDouble(json['trueCostMonthly']),
       hiddenCosts: mappedCosts,
-      riskScore: (json['riskScore'] as num?)?.toDouble() ?? 0.0,
+      riskScore: _asDouble(json['riskScore']),
       riskSummary: json['riskSummary'] ?? '',
       negotiationTips: List<String>.from(json['negotiationTips'] ?? []),
-      confidenceScore: (json['confidenceScore'] as num?)?.toDouble() ?? 0.0,
+      confidenceScore: _asDouble(json['confidenceScore']),
       dataFreshness: json['dataFreshness'] ?? 'N/A',
       sources: (json['sources'] as List?)?.map((e) => AnalysisSource.fromJson(e)).toList() ?? [],
       label: affordability['label'] ?? 'NORMAL',
