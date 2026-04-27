@@ -178,6 +178,14 @@ Example response:
 - If Flutter shows a blank page, confirm the backend is running and `flutter run -d chrome` is started from `frontend_flutter`.
 - If Python does not start, make sure you are inside `frontend_flutter/ai_module` and that `requirements.txt` is installed.
 
+## The Team
+We are a group of five Year 2 Computer Science students majoring in Software Engineering:
+- **Jasmine Khoo Jia Chee** – AI Integration Lead (Z.AI & NLP Specialist)
+- **Tan Yun Yu** – Frontend Developer (Responsive Web Interface & UX)
+- **Lai Yi Wen** – Core Backend & Data Architect (Server Architecture & Kaggle Dataset)
+- **Florence Tong Xin Yee** – Systems Integration & DevOps Engineer (System Integration & Cloud Deployment)
+- **Joechele Lim Qiu Ying** – Financial & Risk Engineer (Mathematical Modeling & Risk Logic)
+
 ## License
 
 MIT
